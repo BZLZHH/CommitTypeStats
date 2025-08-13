@@ -15,17 +15,17 @@ lang_code="${LANG,,}"
 if [[ "$lang_code" == *"zh"* ]]; then
   L_usage_title="用法"
   L_desc="分析 git 提交历史，并按类型显示统计信息。"
-  L_opt_l="-l                                列出每个类型下的所有提交记录。"
-  L_opt_c="-c                                显示每个类型的主要贡献者。"
-  L_opt_prefix="-prefix <str>                     设置提交类型的前缀 (可用'|'分隔多个)。默认不启用。"
-  L_opt_suffix="-suffix <str>                     设置提交类型的后缀 (可用'|'分隔多个)。默认为':|]|)'。"
-  L_opt_no_prefix="--no-prefix                       匹配时忽略前缀。"
-  L_opt_no_suffix="--no-suffix                       匹配时忽略后缀。"
-  L_opt_project_name="-project-name <name>              手动设置项目名称 (覆盖自动检测)。"
-  L_opt_project_root="-project-root <path_or_git[#ref]> 手动设置项目根目录或远程仓库地址，远程可用 '#branch_or_tag' 指定分支/标签。"
-  L_opt_no_cache="--no-cache                        跳过缓存，临时克隆远程仓库（不会写入缓存）。"
-  L_opt_clear="--clear                           清理缓存的 repos 并退出。"
-  L_opt_help="-h, --help                        显示此帮助信息。"
+  L_opt_l="-l                     列出每个类型下的所有提交记录。"
+  L_opt_c="-c                     显示每个类型的主要贡献者。"
+  L_opt_prefix="-prefix <str>            设置提交类型的前缀 (可用'|'分隔多个)。默认不启用。"
+  L_opt_suffix="-suffix <str>            设置提交类型的后缀 (可用'|'分隔多个)。默认为':|]|)'。"
+  L_opt_no_prefix="--no-prefix              匹配时忽略前缀。"
+  L_opt_no_suffix="--no-suffix              匹配时忽略后缀。"
+  L_opt_project_name="-project-name <name>     手动设置项目名称 (覆盖自动检测)。"
+  L_opt_project_root="-project-root <path>     手动设置项目根目录或远程仓库地址，远程可用 '#branch_or_tag' 指定分支/标签。"
+  L_opt_no_cache="--no-cache               跳过缓存，临时克隆远程仓库（不会写入缓存）。"
+  L_opt_clear="--clear                  清理缓存的 repos 并退出。"
+  L_opt_help="-h, --help               显示此帮助信息。"
   L_project="项目"
   L_contrib="[主要贡献者: "
   L_contrib_list="[贡献者: "
@@ -40,17 +40,17 @@ if [[ "$lang_code" == *"zh"* ]]; then
 else
   L_usage_title="Usage"
   L_desc="Analyze git commit history and display statistics by type."
-  L_opt_l="-l                                List all commit records under each type."
-  L_opt_c="-c                                Show main contributors for each type."
-  L_opt_prefix="-prefix <str>                     Set commit type prefix (use '|' to separate multiple). Disabled by default."
-  L_opt_suffix="-suffix <str>                     Set commit type suffix (use '|' to separate multiple). Default: ':|]|)'."
-  L_opt_no_prefix="--no-prefix                       Ignore prefix when matching."
-  L_opt_no_suffix="--no-suffix                       Ignore suffix when matching."
-  L_opt_project_name="-project-name <name>              Manually set the project name (overrides auto-detection)."
-  L_opt_project_root="-project-root <path_or_git[#ref]> Manually set project root or remote git URL; use '#branch_or_tag' to specify branch/tag."
-  L_opt_no_cache="--no-cache                        Skip cache and do a temporary clone (won't write cache)."
-  L_opt_clear="--clear                           Clear cached repos and exit."
-  L_opt_help="-h, --help                        Show this help message."
+  L_opt_l="-l                     List all commit records under each type."
+  L_opt_c="-c                     Show main contributors for each type."
+  L_opt_prefix="-prefix <str>            Set commit type prefix (use '|' to separate multiple). Disabled by default."
+  L_opt_suffix="-suffix <str>            Set commit type suffix (use '|' to separate multiple). Default: ':|]|)'."
+  L_opt_no_prefix="--no-prefix              Ignore prefix when matching."
+  L_opt_no_suffix="--no-suffix              Ignore suffix when matching."
+  L_opt_project_name="-project-name <name>     Manually set the project name (overrides auto-detection)."
+  L_opt_project_root="-project-root <path>     Manually set project root or remote git URL; use '#branch_or_tag' to specify branch/tag."
+  L_opt_no_cache="--no-cache               Skip cache and do a temporary clone (won't write cache)."
+  L_opt_clear="--clear                  Clear cached repos and exit."
+  L_opt_help="-h, --help               Show this help message."
   L_project="Project"
   L_contrib="[Top contributors: "
   L_contrib_list="[Contributors: "
@@ -85,8 +85,9 @@ usage() {
 is_git_url() {
   local url="$1"
   if [[ -z "$url" ]]; then return 1; fi
-  if [[ "$url" =~ ^(git@|ssh://|http://|https://) ]]; then return 0; fi
-  if [[ "$url" =~ ^[^/]+:[^/].+ ]]; then return 0; fi
+  if [[ "$url" =~ ^(git@|ssh://|http://|https://) || "$url" =~ ^[^/]+:[^/].+ ]]; then
+    return 0
+  fi
   return 1
 }
 
@@ -125,16 +126,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/commit-type-stats/repos"
-
 if [[ $clear_cache -eq 1 ]]; then
   if [[ -d "$cache_root" ]]; then
     rm -rf "$cache_root"
     echo -e "\e[1;32m$L_cache_cleared: $cache_root\e[0m"
-    exit 0
   else
     echo -e "\e[1;33m$L_cache_cleared: $cache_root (not exists)\e[0m"
-    exit 0
   fi
+  exit 0
 fi
 
 if [[ -n "$project_root" ]]; then
@@ -145,7 +144,6 @@ if [[ -n "$project_root" ]]; then
       repo_url="${project_root%%#*}"
       ref="${project_root#*#}"
     fi
-
     if [[ $use_cache -eq 1 ]]; then
       mkdir -p "$cache_root"
       key="$(compute_hash "${repo_url}::${ref}")"
@@ -158,35 +156,21 @@ if [[ -n "$project_root" ]]; then
           echo -e "\e[1;33m$L_fetch_failed\e[0m"
           rm -rf "$cache_repo_dir"
         else
-          if [[ -n "$ref" ]]; then
-            git checkout --force "$ref" 2>/dev/null || git checkout --force "origin/$ref" 2>/dev/null || true
-          else
-            default_branch=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|origin/||')
-            if [[ -n "$default_branch" ]]; then
-              git checkout --force "$default_branch" 2>/dev/null || true
-            fi
+          checkout_ref="${ref:-$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|origin/||')}"
+          if [[ -n "$checkout_ref" ]]; then
+             git checkout --force "$checkout_ref" 2>/dev/null || git checkout --force "origin/$checkout_ref" 2>/dev/null || true
           fi
         fi
       fi
-
       if [[ ! -d "$cache_repo_dir/.git" ]]; then
-        mkdir -p "$cache_repo_dir"
+        mkdir -p "$(dirname "$cache_repo_dir")"
         echo -e "\e[1;33m$L_cloning $cache_repo_dir\e[0m"
-        if [[ -n "$ref" ]]; then
-          if ! git clone --branch "$ref" "$repo_url" "$cache_repo_dir" 2>/dev/null; then
-            echo "$L_clone_failed" >&2
-            rm -rf "$cache_repo_dir"
-            exit 1
-          fi
-        else
-          if ! git clone "$repo_url" "$cache_repo_dir" 2>/dev/null; then
-            echo "$L_clone_failed" >&2
-            rm -rf "$cache_repo_dir"
-            exit 1
-          fi
+        clone_args=("$repo_url" "$cache_repo_dir")
+        [[ -n "$ref" ]] && clone_args=("--branch" "$ref" "${clone_args[@]}")
+        if ! git clone "${clone_args[@]}" 2>/dev/null; then
+          echo "$L_clone_failed" >&2; rm -rf "$cache_repo_dir"; exit 1
         fi
       fi
-
       cd "$cache_repo_dir" || { echo "$L_cd_failed $cache_repo_dir" >&2; exit 1; }
       project_root="$cache_repo_dir"
       clean_tmp=0
@@ -194,28 +178,17 @@ if [[ -n "$project_root" ]]; then
       echo -e "\e[1;33m$L_detect_remote $repo_url ${ref:+(#$ref)}\e[0m"
       tmpdir=$(mktemp -d)
       echo -e "\e[1;33m$L_cloning $tmpdir\e[0m"
-      if [[ -n "$ref" ]]; then
-        if ! git clone --branch "$ref" "$repo_url" "$tmpdir" 2>/dev/null; then
-          echo "$L_clone_failed" >&2
-          rm -rf "$tmpdir"
-          exit 1
-        fi
-      else
-        if ! git clone "$repo_url" "$tmpdir" 2>/dev/null; then
-          echo "$L_clone_failed" >&2
-          rm -rf "$tmpdir"
-          exit 1
-        fi
+      clone_args=("$repo_url" "$tmpdir")
+      [[ -n "$ref" ]] && clone_args=("--branch" "$ref" "${clone_args[@]}")
+      if ! git clone "${clone_args[@]}" 2>/dev/null; then
+        echo "$L_clone_failed" >&2; rm -rf "$tmpdir"; exit 1
       fi
       cd "$tmpdir" || { echo "$L_cd_failed $tmpdir" >&2; rm -rf "$tmpdir"; exit 1; }
       project_root="$tmpdir"
       clean_tmp=1
     fi
   else
-    if ! cd "$project_root" 2>/dev/null; then
-      echo "$L_cd_failed $project_root" >&2
-      exit 1
-    fi
+    cd "$project_root" 2>/dev/null || { echo "$L_cd_failed $project_root" >&2; exit 1; }
     project_root="$(pwd)"
   fi
 else
@@ -229,104 +202,173 @@ fi
 if [[ -z "$project_name" ]]; then
   project_name=$(basename "$project_root")
 fi
-
 echo -e "\e[1;36m$L_project: $project_name\e[0m"
 
 types=(Feat Chore Fix Improvement Perf Misc Docs Refactor "Update/Add" Adjust Translate 'Revert/Reapply' Merge Others)
-
 declare -A colors=(
-  [Feat]='\e[38;5;82m'
-  [Chore]='\e[38;5;220m'
-  [Fix]='\e[38;5;208m'
-  [Improvement]='\e[38;5;39m'
-  [Perf]='\e[38;5;33m'
-  [Misc]='\e[38;5;141m'
-  [Docs]='\e[38;5;250m'
-  [Refactor]='\e[38;5;45m'
-  [Update/Add]='\e[38;5;51m'
-  [Adjust]='\e[38;5;99m'
-  [Translate]='\e[38;5;213m'
-  [Revert/Reapply]='\e[38;5;196m'
-  [Merge]='\e[38;5;50m'
-  [Others]='\e[38;5;244m'
+  [Feat]='\e[38;5;82m' [Chore]='\e[38;5;220m' [Fix]='\e[38;5;208m'
+  [Improvement]='\e[38;5;39m' [Perf]='\e[38;5;33m' [Misc]='\e[38;5;141m'
+  [Docs]='\e[38;5;250m' [Refactor]='\e[38;5;45m' [Update/Add]='\e[38;5;51m'
+  [Adjust]='\e[38;5;99m' [Translate]='\e[38;5;213m' [Revert/Reapply]='\e[38;5;196m'
+  [Merge]='\e[38;5;50m' [Others]='\e[38;5;244m'
 )
 
-declare -A commits_by_type
-declare -A counts
-declare -A contrib_counts
+read -r -d '' awk_script <<'EOF'
+function escape_regex(str) {
+    gsub(/[\\[.*+?(){}^$|]/, "\\\\&", str);
+    return str;
+}
+BEGIN {
+    FS="\t";
+    SUBSEP = ",";
+    split(types_list, types_arr, " ");
+    for(i in types_arr) type_lookup[types_arr[i]] = 1;
+    split(prefix_str, prefixes, "|");
+    if (prefix_str == "") prefixes[1] = "";
+    split(suffix_str, suffixes, "|");
+    if (suffix_str == "") suffixes[1] = "";
+}
+{
+    author = $1;
+    line = $2;
+    total++;
+    if (length(author) > max_author_len) max_author_len = length(author);
+    matches = "";
+    matched_in_line = 0;
+    if (match(line, /^(Revert|Reapply)/)) {
+        matches = "Revert/Reapply";
+        matched_in_line = 1;
+    } else if (match(line, /^Merge/)) {
+        matches = "Merge";
+        matched_in_line = 1;
+    }
+    if (!matched_in_line) {
+        content_to_parse = "";
+        found = 0;
+        for (p_idx in prefixes) {
+            p = prefixes[p_idx];
+            for (s_idx in suffixes) {
+                s = suffixes[s_idx];
+                temp = line;
+                p_re = escape_regex(p);
+                s_re = escape_regex(s);
+                if (p != "" && s != "" && index(temp, p) && index(temp, s)) {
+                    sub(".*" p_re, "", temp); sub(s_re ".*", "", temp); content_to_parse = temp; found = 1; break;
+                } else if (p != "" && s == "" && index(temp, p)) {
+                    sub(".*" p_re, "", temp); content_to_parse = temp; found = 1; break;
+                } else if (p == "" && s != "" && index(temp, s)) {
+                    sub(s_re ".*", "", temp); content_to_parse = temp; found = 1; break;
+                } else if (p == "" && s == "") {
+                    content_to_parse = temp; found = 1; break;
+                }
+            }
+            if (found) break;
+        }
+        if (content_to_parse != "") {
+            split(content_to_parse, parts, "|");
+            for (i in parts) {
+                part = parts[i];
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", part);
+                part_lower = tolower(part);
+                for (j in types_arr) {
+                    type_keyword = types_arr[j];
+                    type_keyword_lower = tolower(type_keyword);
+                    is_match = 0;
+                    if (type_keyword == "Update/Add") {
+                        if (index(part_lower, "update") || index(part_lower, "add")) is_match = 1;
+                    } else if (type_keyword == "Improvement") {
+                        if (index(part_lower, "improve")) is_match = 1;
+                    } else {
+                        if (index(part_lower, type_keyword_lower)) is_match = 1;
+                    }
+                    if (is_match && !(type_keyword in found_matches)) {
+                        matches = matches (matches == "" ? "" : " ") type_keyword;
+                        found_matches[type_keyword] = 1;
+                    }
+                }
+            }
+            delete found_matches;
+        }
+    }
+    if (matches == "") matches = "Others";
+    split(matches, found_types, " ");
+    for (i in found_types) {
+        t = found_types[i];
+        if (t in type_lookup) {
+            counts[t]++;
+            contrib_counts[t,author]++;
+            if (show_list_flag) {
+                current_commit_author = author;
+                current_commit_line = line;
+                gsub(/\t/, "\\t", current_commit_author); gsub(/\n/, "\\n", current_commit_author);
+                gsub(/\t/, "\\t", current_commit_line); gsub(/\n/, "\\n", current_commit_line);
+                commits_by_type[t] = commits_by_type[t] current_commit_author "\t" current_commit_line "\n";
+            }
+        }
+    }
+}
+END {
+    print "total\t" total;
+    print "maxlen\t" max_author_len;
+    for (type in counts) {
+        print "count\t" type "\t" counts[type];
+    }
+    for (key in contrib_counts) {
+        split(key, parts, SUBSEP);
+        print "contrib\t" parts[1] "\t" parts[2] "\t" contrib_counts[key];
+    }
+    if (show_list_flag) {
+        for (type in commits_by_type) {
+            gsub(/\n/, "\\n", commits_by_type[type]);
+            print "commits\t" type "\t" commits_by_type[type];
+        }
+    }
+}
+EOF
 
+declare -A counts
+declare -A contrib_data
+declare -A commits_by_type
 total=0
 max_author_len=0
 
-while IFS=$'\t' read -r author line; do
-  matches=""
-  content_to_parse=""
-  if [[ "$line" =~ ^(Revert|Reapply) ]]; then
-    matches="Revert/Reapply"
-  elif [[ "$line" =~ ^Merge ]]; then
-    matches="Merge"
-  else
-    IFS='|' read -ra prefix_list <<< "$prefix"
-    IFS='|' read -ra suffix_list <<< "$suffix"
-    for pre in "${prefix_list[@]:-}"; do
-      for suf in "${suffix_list[@]:-}"; do
-        if [[ -n "$pre" && -n "$suf" && "$line" == *"$pre"* && "$line" == *"$suf"* ]]; then
-          temp=${line#*$pre}
-          content_to_parse=${temp%%$suf*}
-          break 2
-        elif [[ -n "$pre" && -z "$suf" && "$line" == *"$pre"* ]]; then
-          content_to_parse=${line#*$pre}
-          break 2
-        elif [[ -z "$pre" && -n "$suf" && "$line" == *"$suf"* ]]; then
-          content_to_parse=${line%%$suf*}
-          break 2
-        elif [[ -z "$pre" && -z "$suf" ]]; then
-          content_to_parse="$line"
-          break 2
-        fi
-      done
-    done
-    if [[ -n "$content_to_parse" ]]; then
-      IFS='|' read -ra parts <<< "$content_to_parse"
-      for part in "${parts[@]}"; do
-        t=$(echo "$part" | xargs -0)
-        t_lower=${t,,}
-        for type_keyword in Feat Chore Fix Improvement Perf Misc Docs Refactor "Update/Add" Adjust Translate; do
-          if [[ "$type_keyword" == "Update/Add" ]]; then
-            if [[ "$t_lower" == *"update"* || "$t_lower" == *"add"* ]]; then
-              matches+="Update/Add "
-            fi
-          elif [[ "$type_keyword" == "Improvement" ]]; then
-            if [[ "$t_lower" == *"improve"* ]]; then
-              matches+="Improvement "
-            fi
-          else
-            if [[ "$t_lower" == *"${type_keyword,,}"* ]]; then
-              matches+="$type_keyword "
-            fi
-          fi
-        done
-      done
-      matches=$(echo "$matches" | xargs -0)
-    fi
-    if [ -z "$matches" ]; then
-      matches="Others"
-    fi
-  fi
-  ((total++))
-  len=${#author}
-  (( len > max_author_len )) && max_author_len=$len
-  for t in $matches; do
-    commits_by_type["$t"]+="$author"$'\t'"$line"$'\n'
-    ((counts["$t"]++))
-    key="$t,$author"
-    ((contrib_counts["$key"]++))
-  done
-done < <(git log --pretty=format:'%an%x09%s')
+processed_output=$(git log --pretty=format:'%an%x09%s' | awk \
+    -v show_list_flag="$show_list" \
+    -v prefix_str="$prefix" \
+    -v suffix_str="$suffix" \
+    -v types_list="${types[*]}" \
+    "$awk_script")
+
+while IFS= read -r line; do
+    key=$(echo "$line" | cut -f1 -d$'\t')
+    case "$key" in
+        total)
+            total=$(echo "$line" | cut -f2 -d$'\t') ;;
+        maxlen)
+            max_author_len=$(echo "$line" | cut -f2 -d$'\t') ;;
+        count)
+            type=$(echo "$line" | cut -f2 -d$'\t')
+            count=$(echo "$line" | cut -f3 -d$'\t')
+            counts["$type"]="$count"
+            ;;
+        contrib)
+            type=$(echo "$line" | cut -f2 -d$'\t')
+            author=$(echo "$line" | cut -f3 -d$'\t')
+            count=$(echo "$line" | cut -f4 -d$'\t')
+            contrib_data["$type"]+="${count} ${author}"$'\n'
+            ;;
+        commits)
+            type=$(echo "$line" | cut -f2 -d$'\t')
+            content=$(echo "$line" | cut -f3- -d$'\t')
+            commits_by_type["$type"]=$(printf '%b' "${content//\\n/\\n}")
+            ;;
+    esac
+done <<< "$processed_output"
 
 max_label_len=0
 for t in "${types[@]}"; do
   count=${counts[$t]:-0}
+  [[ $count -eq 0 ]] && continue
   label="${t}: ${count}"
   len=${#label}
   (( len > max_label_len )) && max_label_len=$len
@@ -334,48 +376,43 @@ done
 
 for t in "${types[@]}"; do
   count=${counts[$t]:-0}
-  if (( count == 0 )); then
-    continue
-  fi
+  [[ $count -eq 0 ]] && continue
+
   color=${colors[$t]}
   printf "${color}%s: %d\e[0m" "$t" "$count"
-  if [[ $show_contrib -eq 1 && $count -gt 0 ]]; then
-    mapfile -t top_contribs < <(
-      for k in "${!contrib_counts[@]}"; do
-        [[ $k == "$t,"* ]] && echo "${contrib_counts[$k]} $k"
-      done | sort -nr | head -n 3
-    )
-    if [[ ${#top_contribs[@]} -gt 0 ]]; then
-      if [[ $show_list -eq 1 ]]; then
-        printf "  $L_contrib_list"
-      else
-        pad=$((max_label_len - ${#t} - 2))
-        if [ $count -gt 0 ]; then
-          pad=$((pad - ${#count}))
+
+  if [[ $show_contrib -eq 1 ]]; then
+    if [[ -n "${contrib_data[$t]}" ]]; then
+      mapfile -t top_contribs < <(printf '%s' "${contrib_data[$t]}" | sort -rnb | head -n 9)
+
+      if [[ ${#top_contribs[@]} -gt 0 ]]; then
+        if [[ $show_list -eq 1 ]]; then
+          printf "  %s" "$L_contrib_list"
+        else
+          pad=$((max_label_len - ${#t} - ${#count} - 2))
+          printf "%*s  %s" $pad "" "$L_contrib"
         fi
-        printf "%*s  $L_contrib" $pad ""
+
+        first=1
+        for entry in "${top_contribs[@]}"; do
+          read -r count_c name_c <<< "$entry"
+          [[ $first -eq 0 ]] && printf ", "
+          printf "%s(%d)" "$name_c" "$count_c"
+          first=0
+        done
+        printf "]"
       fi
-      first=1
-      for entry in "${top_contribs[@]}"; do
-        count_c=$(echo "$entry" | cut -d' ' -f1)
-        name_c=$(echo "$entry" | cut -d' ' -f2- | cut -d',' -f2-)
-        if [[ $first -eq 0 ]]; then printf ", "; fi
-        printf "%s(%d)" "$name_c" "$count_c"
-        first=0
-      done
-      printf "]"
     fi
   fi
   echo
-  if [[ $show_list -eq 1 && $count -gt 0 ]]; then
+
+  if [[ $show_list -eq 1 && -n "${commits_by_type[$t]}" ]]; then
     while IFS=$'\t' read -r author msg; do
-      trimmed_msg=$(echo "$msg" | xargs -0)
-      if [[ -n "$trimmed_msg" ]]; then
-        if [[ $show_contrib -eq 1 ]]; then
-          printf "${color}    %-*s - %s\e[0m\n" "$max_author_len" "$author" "$msg"
-        else
-          printf "${color}    %s\e[0m\n" "$msg"
-        fi
+      [[ -z "$msg" ]] && continue
+      if [[ $show_contrib -eq 1 ]]; then
+        printf "${color}    %-*s - %s\e[0m\n" "$max_author_len" "$author" "$msg"
+      else
+        printf "${color}    %s\e[0m\n" "$msg"
       fi
     done <<< "${commits_by_type[$t]}"
   fi
