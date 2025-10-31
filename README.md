@@ -56,6 +56,14 @@
 * `-h`, `--help`
   Show this help message.
 
+## Bash Completion
+
+To enable Bash completion for this script, please add the following line to your `~/.bashrc` or `~/.bash_profile`:
+
+```bash
+source path/to/your/commit-type-stats-completion.sh
+```
+
 ## Examples
 
 Analyze local repo with detailed commit listing:
