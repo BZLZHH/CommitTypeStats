@@ -15,8 +15,8 @@ lang_code="${LANG,,}"
 if [[ "$lang_code" == *"zh"* ]]; then
   L_usage_title="用法"
   L_desc="分析 git 提交历史，并按类型显示统计信息。"
-  L_opt_l="-l                     列出每个类型下的所有提交记录。"
-  L_opt_c="-c                     显示每个类型的主要贡献者。"
+  L_opt_l="-l                       列出每个类型下的所有提交记录。"
+  L_opt_c="-c                       显示每个类型的主要贡献者。"
   L_opt_prefix="-prefix <str>            设置提交类型的前缀 (可用'|'分隔多个)。默认不启用。"
   L_opt_suffix="-suffix <str>            设置提交类型的后缀 (可用'|'分隔多个)。默认为':|]|)'。"
   L_opt_no_prefix="--no-prefix              匹配时忽略前缀。"
@@ -40,8 +40,8 @@ if [[ "$lang_code" == *"zh"* ]]; then
 else
   L_usage_title="Usage"
   L_desc="Analyze git commit history and display statistics by type."
-  L_opt_l="-l                     List all commit records under each type."
-  L_opt_c="-c                     Show main contributors for each type."
+  L_opt_l="-l                       List all commit records under each type."
+  L_opt_c="-c                       Show main contributors for each type."
   L_opt_prefix="-prefix <str>            Set commit type prefix (use '|' to separate multiple). Disabled by default."
   L_opt_suffix="-suffix <str>            Set commit type suffix (use '|' to separate multiple). Default: ':|]|)'."
   L_opt_no_prefix="--no-prefix              Ignore prefix when matching."
@@ -104,6 +104,9 @@ compute_hash() {
 
 trap 'if [[ $clean_tmp -eq 1 && -n "$tmpdir" && -d "$tmpdir" ]]; then rm -rf "$tmpdir"; fi' EXIT
 
+unsupported_args=()
+valid_opts=( -l -c -prefix -suffix --no-prefix --no-suffix --no-cache --clear -project-name -project-root -h --help )
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -l) show_list=1; shift ;;
@@ -121,9 +124,42 @@ while [[ $# -gt 0 ]]; do
       if [[ -n "$2" ]]; then project_root="$2"; shift 2; else echo "Error: -project-root requires a value." >&2; exit 1; fi
       ;;
     -h|--help) usage; exit 0 ;;
-    *) shift ;;
+    *)
+      arg="$1"
+      matched=""
+      for opt in "${valid_opts[@]}"; do
+        if [[ "$arg" == "$opt" ]]; then matched="$opt"; break; fi
+      done
+      if [[ -z "$matched" && "$arg" == *s ]]; then
+        base="${arg%?}"
+        for opt in "${valid_opts[@]}"; do
+          if [[ "$base" == "$opt" ]]; then matched="$opt"; break; fi
+        done
+      fi
+      if [[ -z "$matched" ]]; then
+        for opt in "${valid_opts[@]}"; do
+          if [[ "${opt}s" == "$arg" ]]; then matched="$opt"; break; fi
+        done
+      fi
+      if [[ -n "$matched" ]]; then
+        set -- "$matched" "${@:2}"
+        continue
+      fi
+      unsupported_args+=("$1")
+      shift
+      ;;
   esac
 done
+
+if [[ ${#unsupported_args[@]} -gt 0 ]]; then
+  all_wrong_args=$(printf '%s ' "${unsupported_args[@]}")
+  if [[ "$lang_code" == *"zh"* ]]; then
+    echo "错误: 不支持的参数: ${all_wrong_args%?}。请使用 -h 或 --help 查看可用参数。" >&2
+  else
+    echo "Error: Unsupported argument(s): ${all_wrong_args%?}. Please use -h or --help to check available arguments" >&2
+  fi
+  exit 1
+fi
 
 cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/commit-type-stats/repos"
 if [[ $clear_cache -eq 1 ]]; then
@@ -419,3 +455,34 @@ for t in "${types[@]}"; do
 done
 
 echo -e "\e[1;37m$L_total: ${total}\e[0m"
+if [[ $show_contrib -eq 1 ]]; then
+  if [[ $show_list -eq 1 ]]; then
+    printf "\e[1;37m%s" "$L_contrib_list"
+    mapfile -t all_contribs < <(git shortlog -s -n --no-merges | sed -e 's/^[[:space:]]*//')
+    first=1
+    for entry in "${all_contribs[@]}"; do
+      count=$(printf '%s' "$entry" | awk '{print $1}')
+      name=$(printf '%s' "$entry" | cut -f2- -d$'	')
+      if [[ -z "$name" ]]; then name=$(printf '%s' "$entry" | cut -d' ' -f2-); fi
+      [[ $first -eq 0 ]] && printf ", "
+      printf "%s(%s)" "$name" "$count"
+      first=0
+    done
+    printf "]\e[0m
+"
+  else
+    printf "\e[1;37m%s" "$L_contrib"
+    mapfile -t top_contribs < <(git shortlog -s -n --no-merges | sed -e 's/^[[:space:]]*//' | head -n 9)
+    first=1
+    for entry in "${top_contribs[@]}"; do
+      count=$(printf '%s' "$entry" | awk '{print $1}')
+      name=$(printf '%s' "$entry" | cut -f2- -d$'	')
+      if [[ -z "$name" ]]; then name=$(printf '%s' "$entry" | cut -d' ' -f2-); fi
+      [[ $first -eq 0 ]] && printf ", "
+      printf "%s(%s)" "$name" "$count"
+      first=0
+    done
+    printf "]\e[0m
+"
+  fi
+fi
