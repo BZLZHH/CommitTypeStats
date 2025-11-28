@@ -251,8 +251,8 @@ declare -A colors=(
 
 read -r -d '' awk_script <<'EOF'
 function escape_regex(str) {
-    gsub(/[\\[.*+?(){}^$|]/, "\\\\&", str);
-    return str;
+    gsub(/[\\\[\].*+?(){}^$|]/, "\\\\&", str)
+    return str
 }
 BEGIN {
     FS="\t";
