@@ -266,7 +266,8 @@ BEGIN {
 }
 {
     author = $1;
-    line = $2;
+    hash = $2;
+    line = $3;
     total++;
     if (length(author) > max_author_len) max_author_len = length(author);
     matches = "";
@@ -335,10 +336,12 @@ BEGIN {
             contrib_counts[t,author]++;
             if (show_list_flag) {
                 current_commit_author = author;
+                current_commit_hash6 = substr(hash,1,6);
                 current_commit_line = line;
                 gsub(/\t/, "\\t", current_commit_author); gsub(/\n/, "\\n", current_commit_author);
+                gsub(/\t/, "\\t", current_commit_hash6); gsub(/\n/, "\\n", current_commit_hash6);
                 gsub(/\t/, "\\t", current_commit_line); gsub(/\n/, "\\n", current_commit_line);
-                commits_by_type[t] = commits_by_type[t] current_commit_author "\t" current_commit_line "\n";
+                commits_by_type[t] = commits_by_type[t] current_commit_author "\t" current_commit_hash6 "\t" current_commit_line "\n";
             }
         }
     }
@@ -368,7 +371,7 @@ declare -A commits_by_type
 total=0
 max_author_len=0
 
-processed_output=$(git log --pretty=format:'%an%x09%s' | awk \
+processed_output=$(git log --pretty=format:'%an%x09%H%x09%s' | awk \
     -v show_list_flag="$show_list" \
     -v prefix_str="$prefix" \
     -v suffix_str="$suffix" \
@@ -443,12 +446,12 @@ for t in "${types[@]}"; do
   echo
 
   if [[ $show_list -eq 1 && -n "${commits_by_type[$t]}" ]]; then
-    while IFS=$'\t' read -r author msg; do
+    while IFS=$'\t' read -r author hash6 msg; do
       [[ -z "$msg" ]] && continue
       if [[ $show_contrib -eq 1 ]]; then
-        printf "${color}    %-*s - %s\e[0m\n" "$max_author_len" "$author" "$msg"
+        printf "${color}    %-*s - (%s) %s\e[0m\n" "$max_author_len" "$author" "$hash6" "$msg"
       else
-        printf "${color}    %s\e[0m\n" "$msg"
+        printf "${color}    (%s) - %s\e[0m\n" "$hash6" "$msg"
       fi
     done <<< "${commits_by_type[$t]}"
   fi
